@@ -1,0 +1,93 @@
+<meta charset="utf8">
+<title>Graphviz Editor</title>
+
+<style>
+.wrapper {
+  display: flex;
+}
+.renderer {
+  margin: 0px 5px;
+}
+.renderer svg {
+  border: #999 solid 1px;
+}
+.editor {
+  font-family: Consolas,"Liberation Mono",Menlo,Courier,monospace;
+}
+</style>
+
+<h1><a href="http://www.graphviz.org/">Graphviz</a> Editor</h1>
+
+<p>With <a href="https://github.com/mdaines/viz.js/">viz.js.</a>
+
+<script src="viz.js"></script>
+<script>
+(function(window, document, undefined){
+  var WRAPPER = document.createElement('div');
+  var EDITOR = document.createElement('textarea');
+  var RENDERER = document.createElement('div');
+  var DEFAULT_SOURCE = [
+    'digraph {',
+    '  Foo -> Bar',
+    '  Bar -> Qux',
+    '  Qux:ne -> Bar:se [label=Nyan,style=dotted]',
+    '}'
+  ].join('\n');
+  var LOCALSTORAGE_KEY = 'graphvizSource';
+
+  function main() {
+    init();
+
+    var source;
+    var timer;
+    var iteratee = function() {
+      if (EDITOR.value === source) {
+        return;
+      }
+      source = EDITOR.value;
+
+      window.clearTimeout(timer);
+      timer = window.setTimeout(function() {
+        if (EDITOR.value !== source) {
+          return;
+        }
+        window.localStorage[LOCALSTORAGE_KEY] = source;
+        render(source);
+      }, 700);
+    };
+    window.setInterval(iteratee, 500);
+  }
+
+  function render(source) {
+    var content;
+    try {
+      content = Viz(source, 'svg');
+    } catch (e) {
+      var s = e.stack || e.message || e.toString();
+      content = '<pre>' + s + '</pre>';
+    }
+    RENDERER.innerHTML = content;
+  }
+
+  function init() {
+    WRAPPER.className = 'wrapper';
+    EDITOR.className = 'editor';
+    EDITOR.cols = 50;
+    EDITOR.rows = 20;
+    RENDERER.className = 'renderer';
+    WRAPPER.appendChild(EDITOR);
+    WRAPPER.appendChild(RENDERER);
+
+    var source = window.localStorage[LOCALSTORAGE_KEY];
+    if (typeof source === 'undefined') {
+      source = DEFAULT_SOURCE;
+    }
+    EDITOR.value = source;
+
+    document.body.appendChild(WRAPPER);
+  }
+
+  main();
+})(window, document);
+</script>
+</body>
